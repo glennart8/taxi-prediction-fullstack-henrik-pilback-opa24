@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: taxipred
+Version: 0.0.1
+Summary: this package contains taxipred app
+Author: Henrik Pilback
+Author-email: henrikpilback@gmail.se
+Requires-Dist: streamlit
+Requires-Dist: pandas
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
+Requires-Dist: ipykernel
+Requires-Dist: pydantic
+Requires-Dist: scikit-learn
+Requires-Dist: joblib
+Dynamic: author
+Dynamic: author-email
+Dynamic: requires-dist
+Dynamic: summary

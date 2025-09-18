@@ -1,0 +1,7 @@
+README.md
+setup.py
+src/taxipred.egg-info/PKG-INFO
+src/taxipred.egg-info/SOURCES.txt
+src/taxipred.egg-info/dependency_links.txt
+src/taxipred.egg-info/requires.txt
+src/taxipred.egg-info/top_level.txt
