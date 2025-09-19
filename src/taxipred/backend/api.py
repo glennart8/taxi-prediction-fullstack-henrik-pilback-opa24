@@ -14,3 +14,8 @@ async def read_taxi_data():
 async def read_avg_price():
     taxi_data = TaxiData()
     return taxi_data.avg_price()
+
+@app.get("/taxi/search_trip/")
+async def search_trip():
+    taxi_data = TaxiData()
+    return taxi_data.search_trip()
