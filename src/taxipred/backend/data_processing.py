@@ -2,19 +2,19 @@ from taxipred.utils.constants import TAXI_CSV_PATH
 import pandas as pd
 import json
 from datetime import datetime 
-from pydantic import BaseModel, Field
+# from pydantic import BaseModel, Field
 
 # Behöver jag en klass för att träna modellen och en klass för att skicka in datan
 # som simuleras med streamlit, den innehåller ju inte flera av de värden som taxidata har
-class TaxiData(BaseModel):
-    Trip_Distance_km: float = Field(gt=0) 
+class TaxiData:
+    Trip_Distance_km: float
     Time_of_Day: str
     Day_of_Week: str
-    Base_Fare: float = Field(gt=0)
-    Per_Km_Rate: float = Field(gt=0)
-    Per_Minute_Rate: float = Field(gt=0)
-    Trip_Duration_Minutes: float = Field(gt=0)
-    Trip_Price: float = Field(gt=0)
+    Base_Fare: float 
+    Per_Km_Rate: float 
+    Per_Minute_Rate: float 
+    Trip_Duration_Minutes: float 
+    Trip_Price: float 
     
     def __init__(self):
         self.df = pd.read_csv(TAXI_CSV_PATH)
