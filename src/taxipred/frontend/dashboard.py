@@ -1,10 +1,21 @@
 import streamlit as st
-from taxipred.utils.helpers import read_api_endpoint
-import pandas as pd
+from geopy.geocoders import Nominatim
+import googlemaps
+import os
+from dotenv import load_dotenv
 import requests
+from taxipred.utils.helpers import read_api_endpoint, post_api_endpoint
+import pandas as pd
+from datetime import datetime
 
+load_dotenv()
+
+GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
+gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
+geolocator = Nominatim(user_agent="taxi_app")
+
+# --- Streamlit ---
 st.set_page_config(layout="wide", page_title="Taxi-prediction")
-
 st.markdown(
     """
     <style>
@@ -19,51 +30,87 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-data = read_api_endpoint("taxi")
-df = pd.DataFrame(data.json())
-
-avg_prices = read_api_endpoint("taxi/avg_price/")
-avg_prices_data = avg_prices.json()
-
-# Vad ska streamlit innehålla?
-#   - Fält för att fylla i från och till destination, autoläsa in tidpunkt och dag
-#   - Skapa en modell som tränar på data och testas, se resultat och justera efter behov
-#   - Denna model ska anropas via en metod när man söker resa
-
-#   - Visa KPIs för avg_price för resor i spannet 10 min, 20 min, 30 min
-#   - Visa när det behövs flest taxibilar ute
-#   - Visa när "vi" tjänar mest på att köra
-#   - Visa ba chart på när på dygnet resor sker
-#   - Restid per tid på dygnet: Använd ett stapeldiagram för att visa den genomsnittliga Trip_Duration_Minutes för varje Time_of_Day. Detta kan avslöja vilka tider som har mest trafik.
-
 def main():
     st.markdown("# Taxi Prediction Dashboard")
-    
-    col_1, col_2, col_kpis = st.columns([3, 3, 2])
-    
-    with col_1:
-        st.markdown("### Resa")
-        st.dataframe(df)
-        
-    with col_2:
-        st.markdown("### Charts")
-        
+    st.markdown("### Beräkna pris för din resa")
 
-    with col_kpis:
-        st.markdown("### KPI:er")
-        
-        try:
-            st.metric(label="Medelpris (< 10 min)", 
-                     value=f"{avg_prices_data['10']:.2f} $")
+    start_address = st.text_input("Från:")
+    end_address = st.text_input("Till:")
+
+    if st.button("Beräkna pris"):
+        if start_address and end_address:
+            # Använd geopy för att hämta koordinater
+            try:
+                start_location = geolocator.geocode(start_address)
+                end_location = geolocator.geocode(end_address)
+
+                if start_location and end_location:
+                    # Använd Google Maps för att beräkna körsträckan och tid
+                    directions_result = gmaps.directions(
+                        start_location.point,
+                        end_location.point,
+                        mode="driving"
+                    )
+
+                    if directions_result:
+                        distance_meters = directions_result[0]['legs'][0]['distance']['value']
+                        distance_km = distance_meters / 1000
+                        duration_seconds = directions_result[0]['legs'][0]['duration']['value']
+                        duration_minutes = duration_seconds / 60
+                        st.success(f"Avståndet för din resa är: {distance_km:.2f} km")
+                        st.success(f"Restiden är: {duration_minutes:.0f} minuter")
+                        
+                        # Förbered data för API-anropet till din backend
+                        payload = {
+                            "distance_km": distance_km,
+                            "trip_duration_minutes": duration_minutes,
+                        # Här behöver jag tweaka beroende på time_of_day, day_of_week, 
+                            "Time_of_Day": {datetime.now()},
+                            "Day_of_Week": {datetime.now().date},
+                        }
+                        
+                        # Anropa POST-endpoint i backend för att få prediktionen
+                        response = post_api_endpoint(endpoint="/predict_price/", data=payload)
+                        
+                        if response and response.status_code == 200:
+                            predicted_price = response.json()["predicted_price"]
+                            st.metric(label="Predikterat pris", value=f"{predicted_price} kr")
+                        else:
+                            st.error(f"Kunde inte hämta pris. Kontrollera att din FastAPI-server körs.")
+
+                    else:
+                        st.error("Kunde inte beräkna en rutt mellan adresserna.")
+                else:
+                    st.error("Kunde inte hitta en eller båda adresserna. Vänligen försök igen.")
             
-            st.metric(label="Medelpris (< 20 min)", 
-                     value=f"{avg_prices_data['20']:.2f} $")
-            
-            st.metric(label="Medelpris (< 30 min)", 
-                     value=f"{avg_prices_data['30']:.2f} $")
-            
-        except requests.exceptions.ConnectionError:
-            st.error("Kunde inte ansluta till API:et. Se till att din FastAPI-server körs.")
+            except Exception as e:
+                st.error(f"Ett fel uppstod: {e}")
+        else:
+            st.error("Vänligen fyll i både från- och till-adress.")
+
     
+    data = read_api_endpoint("taxi")
+    if data:
+        df = pd.DataFrame(data.json())
+        col_1, col_2, col_kpis = st.columns([3, 3, 2])
+        
+        with col_1:
+            st.markdown("### Resedata")
+            st.dataframe(df)
+            
+        with col_2:
+            st.markdown("### Charts")
+        
+        with col_kpis:
+            st.markdown("### KPI:er")
+            avg_prices = read_api_endpoint("taxi/avg_price/")
+            if avg_prices:
+                avg_prices_data = avg_prices.json()
+                st.metric(label="Medelpris (< 10 min)", value=f"{avg_prices_data['10']:.2f} $")
+                st.metric(label="Medelpris (< 20 min)", value=f"{avg_prices_data['20']:.2f} $")
+                st.metric(label="Medelpris (< 30 min)", value=f"{avg_prices_data['30']:.2f} $")
+            else:
+                st.error("Kunde inte ansluta till API:et.")
+                
 if __name__ == "__main__":
     main()

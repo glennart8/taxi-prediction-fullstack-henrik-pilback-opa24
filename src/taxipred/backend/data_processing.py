@@ -21,6 +21,9 @@ class TaxiData:
             
         return trip_data
  
+    def search_trip():
+        pass
+
 
 
 # Ska jag använda pydantic?! Varför när den redan har gåtts igenom den?
