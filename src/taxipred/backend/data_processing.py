@@ -32,10 +32,9 @@ class TaxiData:
             trip_data[time] = avg_price
             
         return trip_data
- 
-    def predict_price(self, distance_km: float, trip_duration_minutes: float, trip_datetime: datetime):
-
-        # Konvertera datetime-värdena till strings för att kunna mappa mot datasetet
+    
+    def calcylate_day_and_time(self, trip_datetime: datetime):
+        '''Extraherar tid på dagen och veckodag från ett datetime-objekt.'''
         hour = trip_datetime.hour
         if 5 <= hour < 12:
             time_of_day = "Morning"
@@ -48,6 +47,14 @@ class TaxiData:
         
         # Ta ut endast veckodag (vet inte om den kan matcha engelska)
         day_of_week = trip_datetime.strftime('%A')
+        
+        return time_of_day, day_of_week
+ 
+    def predict_price(self, distance_km: float, trip_duration_minutes: float, trip_datetime: datetime):      
+        '''Tar emot rådata från API:et och gör en prediktion.'''
+        
+        # Spara variabler för tid och dag
+        time_of_day, day_of_week = self.calcylate_day_and_time(trip_datetime)
         
         input_data = pd.DataFrame([[
             distance_km,
