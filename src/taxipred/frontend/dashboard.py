@@ -60,13 +60,14 @@ def main():
                         st.success(f"Avståndet för din resa är: {distance_km:.2f} km")
                         st.success(f"Restiden är: {duration_minutes:.0f} minuter")
                         
-                        # Förbered data för API-anropet till din backend
+                        # --- För beräkning av tidpunkt och dag ---
+                        current_time = datetime.now()
+
+                        # Skapa din enkla payload
                         payload = {
                             "distance_km": distance_km,
                             "trip_duration_minutes": duration_minutes,
-                        # Här behöver jag tweaka beroende på time_of_day, day_of_week, 
-                            "Time_of_Day": {datetime.now()},
-                            "Day_of_Week": {datetime.now().date},
+                            "trip_datetime": current_time.isoformat() # Konvertera till en ISO-formaterad sträng
                         }
                         
                         # Anropa POST-endpoint i backend för att få prediktionen
