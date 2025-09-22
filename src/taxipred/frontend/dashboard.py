@@ -52,41 +52,34 @@ if st.button("Beräkna pris"):
                     mode="driving"
                 )
 
-                if directions_result:
-                    distance_km = directions_result[0]['legs'][0]['distance']['value'] / 1000
-                    duration_minutes = directions_result[0]['legs'][0]['duration']['value'] / 60
-                    st.success(f"Avståndet för din resa är: {distance_km:.2f} km")
-                    st.success(f"Restiden är: {duration_minutes:.0f} minuter")
-                    
-                    # --- För beräkning av tidpunkt och dag ---
-                    current_time = datetime.now()
+                distance_km = directions_result[0]['legs'][0]['distance']['value'] / 1000
+                duration_minutes = directions_result[0]['legs'][0]['duration']['value'] / 60
+                st.success(f"Avståndet för din resa är: {distance_km:.2f} km")
+                st.success(f"Restiden är: {duration_minutes:.0f} minuter")
+                
+                current_time = datetime.now()
 
-                    payload = {
-                        "distance_km": distance_km,
-                        "trip_duration_minutes": duration_minutes,
-                        "trip_datetime": current_time.isoformat() 
-                    }
+                input_data = {
+                    "distance_km": distance_km,
+                    "trip_duration_minutes": duration_minutes,
+                    "trip_datetime": current_time.isoformat() 
+                }
+                
+                # Anropa POST-endpoint i backend
+                response = post_api_endpoint(endpoint="/predict_price/", data=input_data)
+                
+                predicted_price = response.json()["predicted_price"]
+                st.metric(label="Uppskattat pris", value=f"{predicted_price} kr")
                     
-                    # Anropa POST-endpoint i backend
-                    response = post_api_endpoint(endpoint="/predict_price/", data=payload)
-                    
-                    if response and response.status_code == 200:
-                        predicted_price = response.json()["predicted_price"]
-                        st.metric(label="Predikterat pris", value=f"{predicted_price} kr")
-                    else:
-                        st.error(f"Kunde inte hämta pris. Kontrollera att din FastAPI-server körs.")
-
-                else:
-                    st.error("Kunde inte beräkna en rutt mellan adresserna.")
             else:
                 st.error("Kunde inte hitta en eller båda adresserna. Vänligen försök igen.")
         
         except Exception as e:
             st.error(f"Ett fel uppstod: {e}")
     else:
-        st.error("Vänligen fyll i både från- och till-adress.")
+        st.error("Fyll i både från- och till-adresserna.")
 
-    
+
 data = read_api_endpoint("taxi")
 if data:
     df = pd.DataFrame(data.json())
