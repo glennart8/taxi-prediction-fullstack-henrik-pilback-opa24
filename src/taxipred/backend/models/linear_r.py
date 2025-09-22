@@ -7,14 +7,10 @@ from taxipred.utils.constants import TAXI_CSV_PATH
 
 df = pd.read_csv(TAXI_CSV_PATH)
 
-# Ta bort kolumner som inte används
-df = df.drop(columns="Day_of_Week")
-df = df.dropna(subset=["Weather"])
-
 # Dummy encoding för kategoriska variabler
 df = pd.get_dummies(
     df,
-    columns=['Time_of_Day', "Weather"],
+    columns=['Time_of_Day'],
     dtype=int
 )
 
