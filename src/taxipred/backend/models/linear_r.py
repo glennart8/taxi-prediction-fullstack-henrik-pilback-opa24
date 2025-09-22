@@ -34,6 +34,10 @@ scaled_X_test = scaler.transform(X_test)
 model = LinearRegression()
 model.fit(scaled_X_train, y_train)
 
+print("Kolumner använda för träning:", X_train.columns.tolist())
+# Kolumner använda för träning:
+# ['Trip_Distance_km', 'Base_Fare', 'Per_Km_Rate', 'Per_Minute_Rate', 'Trip_Duration_Minutes', 'Time_of_Day_Afternoon', 'Time_of_Day_Evening', 'Time_of_Day_Morning', 'Time_of_Day_Night']
+
 # --- SPARA MODELL OCH SCALER ---
 # Måste göras för att kunna använda dem i din API senare
 joblib.dump(model, 'linear_regression_model.pkl')
