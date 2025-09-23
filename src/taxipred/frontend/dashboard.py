@@ -31,11 +31,14 @@ st.markdown(
 )
 
 
-st.markdown("# Uppskattat taxi-pris")
+st.markdown("# Uppskatta taxiresa")
 st.markdown("### Beräkna pris för din resa")
 
-start_address = st.text_input("Från:")
-end_address = st.text_input("Till:")
+col1, col2, col3 = st.columns([1, 2, 2])
+
+with col1:
+    start_address = st.text_input("Från:")
+    end_address = st.text_input("Till:")
 
 if st.button("Uppskatta pris"):
     if start_address and end_address:
@@ -54,8 +57,12 @@ if st.button("Uppskatta pris"):
 
                 distance_km = directions_result[0]['legs'][0]['distance']['value'] / 1000
                 duration_minutes = directions_result[0]['legs'][0]['duration']['value'] / 60
-                st.success(f"Avståndet för din resa är: {distance_km:.2f} km")
-                st.success(f"Restiden är: {duration_minutes:.0f} minuter")
+
+                with col2:
+                    st.write("")
+                    st.success(f"Avståndet för din resa är: {distance_km:.2f} km")
+                    st.write("")
+                    st.success(f"Restiden är: {duration_minutes:.0f} minuter")
                 
                 current_time = datetime.now()
 
@@ -79,8 +86,14 @@ if st.button("Uppskatta pris"):
                 price_predicted_sek_lr = predicted_price_lr * 9.35
                 price_predicted_sek_rf = predicted_price_rf * 9.35
                 
-                st.metric(label="Uppskattat pris (Linear Regression)", value=f"{price_predicted_sek_lr:.2f} kr")
-                st.metric(label="Uppskattat pris (Random Forest)", value=f"{price_predicted_sek_rf:.2f} kr")
+                # --- Visa pris ----
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    st.metric(label="Uppskattat pris (Linear Regression)", value=f"{price_predicted_sek_lr:.2f} kr")
+
+                with col2:
+                    st.metric(label="Uppskattat pris (Random Forest)", value=f"{price_predicted_sek_rf:.2f} kr")
                  
             else:
                 st.error("Kunde inte hitta en eller båda adresserna. Vänligen försök igen.")
@@ -104,13 +117,24 @@ if data:
         st.markdown("### Charts")
     
     with col_kpis:
-        st.markdown("### KPI:er")
-        avg_prices = read_api_endpoint("taxi/avg_price/")
-        if avg_prices:
-            avg_prices_data = avg_prices.json()
-            st.metric(label="Medelpris (< 10 min)", value=f"{avg_prices_data['10']:.2f} $")
-            st.metric(label="Medelpris (< 20 min)", value=f"{avg_prices_data['20']:.2f} $")
-            st.metric(label="Medelpris (< 30 min)", value=f"{avg_prices_data['30']:.2f} $")
-        else:
-            st.error("Kunde inte ansluta till API:et.")
+        st.markdown("### KPI:s")
+        avg_prices = read_api_endpoint("taxi/avg_price/")         
+        avg_prices_data = avg_prices.json()
+        sek = 9.35
+        
+        # Beräkna priserna i SEK innan du visar dem
+        price_sek_10 = avg_prices_data['10'] * sek
+        price_sek_20 = avg_prices_data['20'] * sek
+        price_sek_30 = avg_prices_data['30'] * sek
+        
+        st.metric(label="Medelpris (< 10 min)", value=f"{price_sek_10:.2f} :-")
+        st.metric(label="Medelpris (< 20 min)", value=f"{price_sek_20:.2f} :-")
+        st.metric(label="Medelpris (< 30 min)", value=f"{price_sek_30:.2f} :-")
+        
+        # Dyrast resa
+        most_expensive = read_api_endpoint("taxi/most_expensive")
+        most_expensive_trip = most_expensive.json()
+        
+        st.metric(label="Tidpunkt för dyrast resa: ", value=most_expensive_trip)
+
         

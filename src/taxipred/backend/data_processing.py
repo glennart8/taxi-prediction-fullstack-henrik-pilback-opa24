@@ -29,4 +29,13 @@ class TaxiData:
             
         return trip_data
     
-        
+    def most_expensive(self):
+        # Summera Trip_Price för varje Time_of_Day och returnera den med högst värde
+        grouped = self.df.groupby("Time_of_Day")["Trip_Price"].sum()
+        most_expensive_time = grouped.idxmax()
+        return most_expensive_time
+    
+    def most_popular_time(self):
+        pass
+    
+    

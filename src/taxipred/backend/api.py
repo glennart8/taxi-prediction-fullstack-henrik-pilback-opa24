@@ -89,6 +89,11 @@ async def read_avg_price():
     taxi_data = TaxiData()
     return taxi_data.avg_price()
 
+@app.get("/taxi/most_expensive/")
+async def read_most_expensive():
+    taxi_data = TaxiData()
+    return taxi_data.most_expensive()
+
 # --- Endpoint för prisprediktion ---
 @app.post("/predict_price/")
 async def predict_price(request: PredictRequest):
