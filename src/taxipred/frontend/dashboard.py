@@ -122,7 +122,6 @@ if data:
         avg_prices_data = avg_prices.json()
         sek = 9.35
         
-        # Beräkna priserna i SEK innan du visar dem
         price_sek_10 = avg_prices_data['10'] * sek
         price_sek_20 = avg_prices_data['20'] * sek
         price_sek_30 = avg_prices_data['30'] * sek
@@ -135,6 +134,33 @@ if data:
         most_expensive = read_api_endpoint("taxi/most_expensive")
         most_expensive_trip = most_expensive.json()
         
-        st.metric(label="Tidpunkt för dyrast resa: ", value=most_expensive_trip)
+        #Känns fel, men ett enkelt sätt, tar inte hänsyn till de andra
+        if most_expensive_trip == "Afternoon":
+            value="Eftermiddag"
+        if most_expensive_trip == "Morning":
+            value="Morgon"
+        if most_expensive_trip == "Evening":
+            value="Kväll"
+        if most_expensive_trip == "Night":
+            value="Natt"
+        
+        st.metric(label="Tidpunkt för dyrast resa: ", value=value)
+        
+        
+        
+        # Tidpunkt då flest åker
+        most_customers = read_api_endpoint("/taxi/most_customers")
+        most_customers_time_of_day = most_customers.json()
+        
+        # Kanske fel sätt, men gör de andra if-satserna också
+        if most_customers_time_of_day == "Afternoon":
+            value="Eftermiddag"
+        if most_customers_time_of_day == "Morning":
+            value="Morgon"
+        if most_customers_time_of_day == "Evening":
+            value="Kväll"
+        if most_customers_time_of_day == "Night":
+            value="Natt"
+        st.metric(label="Flest resenärer: ", value=value)
 
         
