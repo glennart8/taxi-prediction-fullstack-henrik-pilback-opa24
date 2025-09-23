@@ -4,13 +4,14 @@ from pydantic import BaseModel
 from datetime import datetime
 import pandas as pd
 import joblib
-from taxipred.utils.constants import MODEL_PATH, SCALER_PATH
+from taxipred.utils.constants import MODEL_PATH, SCALER_PATH, MODEL_RF
 
 app = FastAPI()
 
 # --- Ladda modell och scaler ---
 # .as_posix() för att få en strängsökväg
-model = joblib.load(MODEL_PATH.as_posix())
+model_lr = joblib.load(MODEL_PATH.as_posix())
+model_rf = joblib.load(MODEL_RF.as_posix())
 scaler = joblib.load(SCALER_PATH.as_posix())
 
 # Kolumnerna som modellen tränats på i exakt ordning - en konstant
@@ -48,6 +49,35 @@ def calculate_time_of_day(trip_datetime: datetime) -> str:
     else:
         return "Night"
 
+def prepare_input_data(request: PredictRequest) -> pd.DataFrame:
+    """
+    Förbereder inkommande data från PredictRequest för prediktion.
+    """
+    # Anropa funktion som konverterar tidpunkt till sträng
+    time_of_day = calculate_time_of_day(request.trip_datetime)
+
+    # Skapa en DataFrame för den inkommande datan
+    df_to_predict = pd.DataFrame([[
+        request.distance_km,
+        request.trip_duration_minutes,
+        time_of_day
+    ]], columns=['Trip_Distance_km', 'Trip_Duration_Minutes', 'Time_of_Day'])
+
+    # One-Hot Encoding av den kategoriska variabeln Time_of_Day
+    input_data_encoded = pd.get_dummies(
+        df_to_predict,
+        columns=['Time_of_Day'],
+        dtype=int
+    )
+
+    # Lägg till eventuella saknade dummy-kolumner med värdet 0
+    for col in TRAIN_COLUMNS:
+        if col not in input_data_encoded.columns:
+            input_data_encoded[col] = 0
+
+    # Säkerställ att kolumnordningen är EXAKT densamma som träningsdatan
+    return input_data_encoded[TRAIN_COLUMNS]
+
 
 @app.get("/taxi/")
 async def read_taxi_data():
@@ -60,46 +90,23 @@ async def read_avg_price():
     return taxi_data.avg_price()
 
 # --- Endpoint för prisprediktion ---
-# request är en typ-hint att det ska va en instans av klassen, fastapi kollar validering mot pydantic
 @app.post("/predict_price/")
 async def predict_price(request: PredictRequest):
     """
-    Tar emot rådata och returnerar ett predikterat taxipris.
+    Tar emot rådata och returnerar predikterade taxipriser från två modeller.
     """
-    # Anropa funktion som konverterar tidpunkt till sträng (t.ex. morning)
-    time_of_day = calculate_time_of_day(request.trip_datetime)
+    # Förbered datan med en separat funktion för renare kod
+    final_input_df = prepare_input_data(request)
     
-    # Skapa en DataFrame för den inkommande datan
-    df_to_predict = pd.DataFrame([[
-        request.distance_km,
-        request.trip_duration_minutes,
-        time_of_day
-    ]], columns=['Trip_Distance_km', 'Trip_Duration_Minutes', 'Time_of_Day'])
-
-    # One-Hot Encoding av den kategoriska variabeln Time_of_Day
-    input_data_encoded = pd.get_dummies(
-        df_to_predict, 
-        columns=['Time_of_Day'],
-        dtype=int
-    )
-    
-    # Lägg till eventuella saknade dummy-kolumner med värdet 0
-    # Detta ÄR ETT MÅSTE för att undvika fel eftersom tre kolumner alltid kommer saknas
-    # Om användaren angett en tid som blir "morning", skicaks 0 in till övriga 3 kolumner
-    for col in TRAIN_COLUMNS:
-        if col not in input_data_encoded.columns:
-            input_data_encoded[col] = 0
-
-    # Säkerställ att kolumnordningen är EXAKT densamma som träningsdatan
-    final_input_df = input_data_encoded[TRAIN_COLUMNS]
-    
-    # --- Scaling och Prediction --- 
-    
-    # Skala datan
+    # Skala datan (enligt din befintliga kod)
     scaled_data = scaler.transform(final_input_df)
     
-    # Gör prediktionen med modell
-    predicted_price = model.predict(scaled_data)[0]
+    # Gör prediktioner med båda modellerna
+    predicted_price_lr = model_lr.predict(scaled_data)[0]
+    predicted_price_rf = model_rf.predict(final_input_df)[0]
     
-    # Returnerar en dictionary, fastapi serialiserar den till en JSON-sträng
-    return {"predicted_price": round(predicted_price, 2)} 
+    # Returnerar en dictionary med tydliga nycklar för varje prediktion
+    return {
+        "predicted_price_lr": round(predicted_price_lr, 2),
+        "predicted_price_rf": round(predicted_price_rf, 2)
+    }
