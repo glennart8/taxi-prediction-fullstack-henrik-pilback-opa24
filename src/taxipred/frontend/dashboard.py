@@ -69,9 +69,19 @@ if st.button("Uppskatta pris"):
                 response = post_api_endpoint(endpoint="/predict_price/", data=input_data)
                 
                 # Sparar api-responsen i en variabel och skriver ut den
-                predicted_price = response.json()["predicted_price"]
-                st.metric(label="Uppskattat pris", value=f"{predicted_price * 9.35:.2f} kr")
-                    
+                predicted_prices = response.json()
+                
+                # Hämta priserna från den uppdaterade JSON-strukturen
+                predicted_price_lr = predicted_prices.get("predicted_price_lr", 0)
+                predicted_price_rf = predicted_prices.get("predicted_price_rf", 0)
+                
+                # Omvandla till svenska kr
+                price_predicted_sek_lr = predicted_price_lr * 9.35
+                price_predicted_sek_rf = predicted_price_rf * 9.35
+                
+                st.metric(label="Uppskattat pris (Linear Regression)", value=f"{price_predicted_sek_lr:.2f} kr")
+                st.metric(label="Uppskattat pris (Random Forest)", value=f"{price_predicted_sek_rf:.2f} kr")
+                 
             else:
                 st.error("Kunde inte hitta en eller båda adresserna. Vänligen försök igen.")
         

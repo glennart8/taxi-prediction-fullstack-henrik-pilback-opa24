@@ -4,5 +4,7 @@ TAXI_CSV_PATH = files("taxipred").joinpath("data/cleaned_data.csv")
 # DATA_PATH = Path(__file__).parents[1] / "data"
 
 
-MODEL_PATH = files("taxipred").joinpath("backend/models/linear_regression_model.pkl")
-SCALER_PATH = files("taxipred").joinpath("backend/models/scaler.pkl")
+MODEL_PATH = files("taxipred").joinpath("backend/models/linear_regression_model.joblib")
+SCALER_PATH = files("taxipred").joinpath("backend/models/scaler.joblib")
+
+MODEL_RF = files("taxipred").joinpath("backend/models/random_forest_model.joblib")
