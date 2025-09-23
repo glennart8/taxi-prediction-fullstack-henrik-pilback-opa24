@@ -3,11 +3,11 @@ from geopy.geocoders import Nominatim
 import googlemaps
 import os
 from dotenv import load_dotenv
-import requests
 from taxipred.utils.helpers import read_api_endpoint, post_api_endpoint
 import pandas as pd
 from datetime import datetime
 
+# --- Setup ---
 load_dotenv()
 
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
@@ -31,13 +31,13 @@ st.markdown(
 )
 
 
-st.markdown("# Taxi Prediction Dashboard")
+st.markdown("# Uppskattat taxi-pris")
 st.markdown("### Beräkna pris för din resa")
 
 start_address = st.text_input("Från:")
 end_address = st.text_input("Till:")
 
-if st.button("Beräkna pris"):
+if st.button("Uppskatta pris"):
     if start_address and end_address:
         # geopy för att hämta koordinater
         try:
@@ -68,8 +68,9 @@ if st.button("Beräkna pris"):
                 # Anropa POST-endpoint i backend
                 response = post_api_endpoint(endpoint="/predict_price/", data=input_data)
                 
+                # Sparar api-responsen i en variabel och skriver ut den
                 predicted_price = response.json()["predicted_price"]
-                st.metric(label="Uppskattat pris", value=f"{predicted_price} kr")
+                st.metric(label="Uppskattat pris", value=f"{predicted_price * 9.35:.2f} kr")
                     
             else:
                 st.error("Kunde inte hitta en eller båda adresserna. Vänligen försök igen.")

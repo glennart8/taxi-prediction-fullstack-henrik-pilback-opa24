@@ -1,10 +1,9 @@
 from taxipred.utils.constants import TAXI_CSV_PATH
 import pandas as pd
 import json
-from datetime import datetime 
 
 class TaxiData:
-    '''Klass som läser in den rensade datan, innehåller metoder som returnerar data för frontend'''
+    '''Klass som läser in den rensade datan, innehåller metoder som returnerar data (KPI och plots)'''
     Trip_Distance_km: float
     Time_of_Day: str
     Base_Fare: float 
@@ -30,10 +29,4 @@ class TaxiData:
             
         return trip_data
     
-
-        # -- Anropa modell --- 
-        
-        # if self.model:
-        #     predicted_price = self.model.predict(input_data)[0]
-        #     return {"predicted_price": round(predicted_price, 2)}
         

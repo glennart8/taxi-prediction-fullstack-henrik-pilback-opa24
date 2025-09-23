@@ -13,7 +13,7 @@ app = FastAPI()
 model = joblib.load(MODEL_PATH.as_posix())
 scaler = joblib.load(SCALER_PATH.as_posix())
 
-# Definiera kolumnerna som modellen tränats på
+# Kolumnerna som modellen tränats på i exakt ordning - en konstant
 TRAIN_COLUMNS = ['Trip_Distance_km', 
                  'Base_Fare', 
                  'Per_Km_Rate', 
@@ -60,13 +60,13 @@ async def read_avg_price():
     return taxi_data.avg_price()
 
 # --- Endpoint för prisprediktion ---
-# request är en typ-hint att det ska va en instans av klassen, fastpi kollar validering mot pydantic
+# request är en typ-hint att det ska va en instans av klassen, fastapi kollar validering mot pydantic
 @app.post("/predict_price/")
 async def predict_price(request: PredictRequest):
     """
     Tar emot rådata och returnerar ett predikterat taxipris.
     """
-    # Omvandla rådata till det format som modellen förväntar sig
+    # Anropa funktion som konverterar tidpunkt till sträng (t.ex. morning)
     time_of_day = calculate_time_of_day(request.trip_datetime)
     
     # Skapa en DataFrame för den inkommande datan
@@ -93,10 +93,13 @@ async def predict_price(request: PredictRequest):
     # Säkerställ att kolumnordningen är EXAKT densamma som träningsdatan
     final_input_df = input_data_encoded[TRAIN_COLUMNS]
     
+    # --- Scaling och Prediction --- 
+    
     # Skala datan
     scaled_data = scaler.transform(final_input_df)
     
     # Gör prediktionen med modell
     predicted_price = model.predict(scaled_data)[0]
     
-    return {"predicted_price": round(predicted_price, 2)}
+    # Returnerar en dictionary, fastapi serialiserar den till en JSON-sträng
+    return {"predicted_price": round(predicted_price, 2)} 
