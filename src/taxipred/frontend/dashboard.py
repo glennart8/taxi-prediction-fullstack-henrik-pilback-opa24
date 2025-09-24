@@ -87,13 +87,19 @@ if st.button("Uppskatta pris"):
                 price_predicted_sek_rf = predicted_price_rf * 9.35
                 
                 # --- Visa pris ----
-                col1, col2 = st.columns(2)
+                col1, col2, col3, col4 = st.columns(4)
 
                 with col1:
                     st.metric(label="Uppskattat pris (Linear Regression)", value=f"{price_predicted_sek_lr:.2f} kr")
 
                 with col2:
                     st.metric(label="Uppskattat pris (Random Forest)", value=f"{price_predicted_sek_rf:.2f} kr")
+                    
+                with col3:
+                    st.write("")
+                    
+                with col4:
+                    st.write("")
                  
             else:
                 st.error("Kunde inte hitta en eller båda adresserna. Vänligen försök igen.")
@@ -145,8 +151,7 @@ if data:
             value="Natt"
         
         st.metric(label="Tidpunkt för dyrast resa: ", value=value)
-        
-        
+       
         
         # Tidpunkt då flest åker
         most_customers = read_api_endpoint("/taxi/most_customers")
