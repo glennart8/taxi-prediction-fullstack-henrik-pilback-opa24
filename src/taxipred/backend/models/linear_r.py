@@ -39,6 +39,5 @@ print("Kolumner använda för träning:", X_train.columns.tolist())
 # ['Trip_Distance_km', 'Base_Fare', 'Per_Km_Rate', 'Per_Minute_Rate', 'Trip_Duration_Minutes', 'Time_of_Day_Afternoon', 'Time_of_Day_Evening', 'Time_of_Day_Morning', 'Time_of_Day_Night']
 
 # --- SPARA MODELL OCH SCALER ---
-# Måste göras för att kunna använda dem i din API senare
-joblib.dump(model, 'linear_regression_model.pkl')
-joblib.dump(scaler, 'scaler.pkl')
+joblib.dump(model, 'linear_regression_model_no_outliers.joblib')
+joblib.dump(scaler, 'scaler_no_outliers.joblib')
