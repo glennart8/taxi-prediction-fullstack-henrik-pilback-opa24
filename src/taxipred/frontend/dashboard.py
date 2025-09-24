@@ -120,8 +120,10 @@ if data:
         st.dataframe(df)
         
     with col_2:
-        st.markdown("### Charts")
-    
+        st.markdown("### PLOTS")
+        # Visa plot
+        # distribution_plot = read_api_endpoint("/taxi/distribution_plot")
+        
     with col_kpis:
         st.markdown("### KPI:s")
         avg_prices = read_api_endpoint("taxi/avg_price/")         

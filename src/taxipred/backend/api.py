@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from taxipred.backend.data_processing import TaxiData
 from pydantic import BaseModel
 from datetime import datetime
@@ -120,3 +121,11 @@ async def predict_price(request: PredictRequest):
         "predicted_price_lr": round(predicted_price_lr, 2),
         "predicted_price_rf": round(predicted_price_rf, 2)
     }
+
+
+# --- PLOTS ---
+
+@app.get("/taxi/distribution_plot")
+async def get_distribution_plot():
+    taxi_data = TaxiData()
+    return taxi_data.show_distribution()

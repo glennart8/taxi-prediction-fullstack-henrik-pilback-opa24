@@ -1,6 +1,8 @@
 from taxipred.utils.constants import TAXI_CSV_PATH
 import pandas as pd
 import json
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 class TaxiData:
     '''Klass som läser in den rensade datan, innehåller metoder som returnerar data (KPI och plots)'''
@@ -43,4 +45,26 @@ class TaxiData:
         most_popular_time = time_counts.idxmax()
         return most_popular_time
     
-    
+    # Visa en barplot på fördelningen av antalet resor under dagen
+    def show_distribution(self):
+            """
+            Skapar en barplot-figur över resor per tid på dygnet och returnerar den.
+            """
+            time_counts = self.df['Time_of_Day'].value_counts()
+            
+            # Skapa en Matplotlib-figur och en axel
+            fig, ax = plt.subplots(figsize=(10, 6))
+            
+            # Rita diagrammet på den skapade axeln
+            sns.barplot(x=time_counts.index, y=time_counts.values, ax=ax, palette='viridis')
+            
+            ax.set_title('Fördelning av resor per tid på dygnet', fontsize=16)
+            ax.set_xlabel('Tid på dygnet', fontsize=12)
+            ax.set_ylabel('Antal resor', fontsize=12)
+            ax.tick_params(axis='x', rotation=45)
+            ax.grid(axis='y', linestyle='--', alpha=0.7)
+            
+            # Returnera hela figuren
+            return fig
+
+        
