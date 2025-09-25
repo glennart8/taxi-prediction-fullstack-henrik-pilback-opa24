@@ -10,7 +10,7 @@ setup(
     description="this package contains taxipred app",
     author="Henrik Pilback",
     author_email="henrikpilback@gmail.se",
-    install_requires=["streamlit", "pandas", "fastapi", "uvicorn", "ipykernel", "pydantic", "scikit-learn", "joblib", "geopy", "googlemaps", "python-dotenv", "matplotlib"],
+    install_requires=["streamlit", "pandas", "fastapi", "uvicorn", "ipykernel", "pydantic", "scikit-learn", "joblib", "geopy", "googlemaps", "python-dotenv", "matplotlib", "plotly.express"],
     package_dir={"": "src"},
     package_data={"taxipred": ["data/*.csv"]},
     packages=find_packages(),

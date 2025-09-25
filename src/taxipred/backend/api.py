@@ -6,6 +6,8 @@ from datetime import datetime
 import pandas as pd
 import joblib
 from taxipred.utils.constants import MODEL_PATH, SCALER_PATH, MODEL_RF
+from fastapi.responses import JSONResponse
+import plotly.express
 
 app = FastAPI()
 
@@ -128,4 +130,8 @@ async def predict_price(request: PredictRequest):
 @app.get("/taxi/distribution_plot")
 async def get_distribution_plot():
     taxi_data = TaxiData()
-    return taxi_data.show_distribution()
+    fig = taxi_data.show_distribution()
+
+    # PlotlyJSONEncoder löser numpy-problemet
+    fig_json = plotly.io.to_json(fig)  
+    return JSONResponse(content=fig_json)

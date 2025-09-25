@@ -1,8 +1,8 @@
 from taxipred.utils.constants import TAXI_CSV_PATH
 import pandas as pd
 import json
-import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.express as px
+from fastapi.responses import JSONResponse
 
 class TaxiData:
     '''Klass som läser in den rensade datan, innehåller metoder som returnerar data (KPI och plots)'''
@@ -45,26 +45,29 @@ class TaxiData:
         most_popular_time = time_counts.idxmax()
         return most_popular_time
     
-    # Visa en barplot på fördelningen av antalet resor under dagen
+
     def show_distribution(self):
             """
-            Skapar en barplot-figur över resor per tid på dygnet och returnerar den.
+            Skapar en barplot över resor per tid på dygnet med Plotly Express.
+            Returnerar figuren som dict (JSON).
             """
-            time_counts = self.df['Time_of_Day'].value_counts()
-            
-            # Skapa en Matplotlib-figur och en axel
-            fig, ax = plt.subplots(figsize=(10, 6))
-            
-            # Rita diagrammet på den skapade axeln
-            sns.barplot(x=time_counts.index, y=time_counts.values, ax=ax, palette='viridis')
-            
-            ax.set_title('Fördelning av resor per tid på dygnet', fontsize=16)
-            ax.set_xlabel('Tid på dygnet', fontsize=12)
-            ax.set_ylabel('Antal resor', fontsize=12)
-            ax.tick_params(axis='x', rotation=45)
-            ax.grid(axis='y', linestyle='--', alpha=0.7)
-            
-            # Returnera hela figuren
-            return fig
+            time_counts = self.df['Time_of_Day'].value_counts().reset_index()
+            time_counts.columns = ["Tid på dygnet", "Antal resor"]
 
-        
+            fig = px.bar(
+                time_counts,
+                x="Tid på dygnet",
+                y="Antal resor",
+                title="Fördelning av resor över dygnet",
+                color="Tid på dygnet",
+                color_discrete_sequence=px.colors.sequential.Turbo
+            )
+
+            # Hur skapar jag alias för dessa, Afternoon - eftermiddag osv
+            fig.update_layout(
+                xaxis_title="Tid på dygnet",
+                yaxis_title="Antal resor",
+            )
+
+            return fig.to_dict()  # Viktigt för att kunna serialisera som JSON
+            

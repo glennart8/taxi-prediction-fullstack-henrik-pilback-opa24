@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from taxipred.utils.helpers import read_api_endpoint, post_api_endpoint
 import pandas as pd
 from datetime import datetime
+import plotly.graph_objects as go
+import json
 
 # --- Setup ---
 load_dotenv()
@@ -121,8 +123,15 @@ if data:
         
     with col_2:
         st.markdown("### PLOTS")
-        # Visa plot
-        # distribution_plot = read_api_endpoint("/taxi/distribution_plot")
+
+        response = read_api_endpoint("/taxi/distribution_plot")
+
+        if response.status_code == 200:
+            fig_json = response.json()            #  får str från API
+            fig = go.Figure(json.loads(fig_json)) #  konvertera str till dict
+            st.plotly_chart(fig)
+        else:
+            st.error(f"Fel från API: {response.status_code}")
         
     with col_kpis:
         st.markdown("### KPI:s")
