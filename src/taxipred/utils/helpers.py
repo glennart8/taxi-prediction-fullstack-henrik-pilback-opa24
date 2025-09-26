@@ -2,10 +2,10 @@ import requests
 from urllib.parse import urljoin
 import json
 
-def read_api_endpoint(endpoint = "/", base_url = "http://127.0.0.1:8000"):
+# La till params för att kunna skicka i start- och end-address
+def read_api_endpoint(endpoint = "/", params=None, base_url = "http://127.0.0.1:8000"):
     url = urljoin(base_url, endpoint)
-    response = requests.get(url)
-    
+    response = requests.get(url, params=params)
     return response
 
 

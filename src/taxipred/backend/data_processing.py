@@ -2,7 +2,6 @@ from taxipred.utils.constants import TAXI_CSV_PATH
 import pandas as pd
 import json
 import plotly.express as px
-from fastapi.responses import JSONResponse
 
 class TaxiData:
     '''Klass som läser in den rensade datan, innehåller metoder som returnerar data (KPI och plots)'''
@@ -70,4 +69,6 @@ class TaxiData:
             )
 
             return fig.to_dict()  # Viktigt för att kunna serialisera som JSON
+
+
             

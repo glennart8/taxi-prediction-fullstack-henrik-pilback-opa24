@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
 from taxipred.backend.data_processing import TaxiData
 from pydantic import BaseModel
 from datetime import datetime
@@ -7,8 +6,15 @@ import pandas as pd
 import joblib
 from taxipred.utils.constants import MODEL_PATH, SCALER_PATH, MODEL_RF
 from fastapi.responses import JSONResponse
-import plotly.express
+import plotly.io
+import googlemaps
+import os
+from dotenv import load_dotenv
 
+
+load_dotenv()
+GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
+gmaps_client = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
 app = FastAPI()
 
 # --- Ladda modell och scaler ---
@@ -82,6 +88,32 @@ def prepare_input_data(request: PredictRequest) -> pd.DataFrame:
     return input_data_encoded[TRAIN_COLUMNS]
 
 
+@app.get("/taxi/distance_duration/")
+async def distance_duration(start_address: str, end_address: str):
+    try:
+        start_result = gmaps_client.geocode(start_address)
+        end_result = gmaps_client.geocode(end_address)
+
+        start_loc = start_result[0]["geometry"]["location"]
+        end_loc = end_result[0]["geometry"]["location"]
+
+        directions = gmaps_client.directions(
+            (start_loc["lat"], start_loc["lng"]),
+            (end_loc["lat"], end_loc["lng"]),
+            mode="driving"
+        )
+
+        distance_km = directions[0]["legs"][0]["distance"]["value"] / 1000
+        duration_min = directions[0]["legs"][0]["duration"]["value"] / 60
+
+        return {"distance_km": distance_km, "duration_minutes": duration_min}
+
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+# --- API-ANROP ---
+
 @app.get("/taxi/")
 async def read_taxi_data():
     taxi_data = TaxiData()
@@ -135,3 +167,18 @@ async def get_distribution_plot():
     # PlotlyJSONEncoder löser numpy-problemet
     fig_json = plotly.io.to_json(fig)  
     return JSONResponse(content=fig_json)
+
+@app.get("/taxi/price_by_time_of_day/")
+async def price_by_time_of_day():
+    taxi_data = TaxiData()
+    df = taxi_data.df  
+
+    # Räkna ut medelpris per tidpunkt
+    avg_prices = df.groupby("Time_of_Day")["Trip_Price"].mean().reset_index()
+
+    # Se till att kategorierna kommer i rätt ordning
+    order = ["Morning", "Afternoon", "Evening", "Night"]
+    avg_prices["Time_of_Day"] = pd.Categorical(avg_prices["Time_of_Day"], categories=order, ordered=True)
+    avg_prices = avg_prices.sort_values("Time_of_Day")
+
+    return avg_prices.to_dict(orient="records")
