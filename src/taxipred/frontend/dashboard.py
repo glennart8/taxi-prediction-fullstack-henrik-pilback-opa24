@@ -75,7 +75,7 @@ with col_left:
 
 
 with col_right:
-    st.header("KPI:s")
+    st.header("📈 KPI:s")
     avg_prices = read_api_endpoint("taxi/avg_price/").json()
     sek = 9.35
     col_kpi_left, col_kpi_right = st.columns(2)
@@ -108,27 +108,24 @@ with col_plot:
     tab1, tab2 = st.tabs(["Fördelning av resor", "Prisgenomsnitt över dygn"])
 
     with tab1:
-        st.header("Fördelning av resor per tid på dygnet")
+        st.header("🕒 Fördelning av resor per tid på dygnet")
         response = read_api_endpoint("/taxi/distribution_plot")
         if response.status_code == 200:
-            fig_json = response.json()
-            fig = go.Figure(json.loads(fig_json))
+            fig_json_str = response.json()
+            fig_json = json.loads(fig_json_str)  # omvandla JSON-sträng till dict
+            fig = go.Figure(fig_json)
             st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.error("Kunde inte hämta distributionsdiagrammet")
 
     with tab2:
         st.header("📈 Prisgenomsnitt över dygnet")
-        price_response = read_api_endpoint("/taxi/price_by_time_of_day/")
-        if price_response.status_code == 200:
-            price_data = pd.DataFrame(price_response.json())
-            mapping = {"Afternoon": "Eftermiddag", "Morning": "Morgon", "Evening": "Kväll", "Night": "Natt"}
-            price_data["Tid på dygnet"] = price_data["Time_of_Day"].map(mapping)
-
-            fig_price = px.line(
-                price_data,
-                x="Tid på dygnet",
-                y="Trip_Price",
-                markers=True,
-                title="Genomsnittligt pris per tidpunkt på dygnet",
-                line_shape="linear"
-            )
-            st.plotly_chart(fig_price, use_container_width=True)
+        response = read_api_endpoint("/taxi/price_plot/")
+        if response.status_code == 200:
+            fig_json_str = response.json()
+            # Konvertera JSON-sträng till dict
+            fig_json = json.loads(fig_json_str)
+            fig = go.Figure(fig_json)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.error("Kunde inte hämta prisdiagrammet")

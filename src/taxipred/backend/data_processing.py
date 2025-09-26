@@ -46,29 +46,55 @@ class TaxiData:
     
 
     def show_distribution(self):
-            """
-            Skapar en barplot över resor per tid på dygnet med Plotly Express.
-            Returnerar figuren som dict (JSON).
-            """
-            time_counts = self.df['Time_of_Day'].value_counts().reset_index()
-            time_counts.columns = ["Tid på dygnet", "Antal resor"]
+        time_counts = self.df['Time_of_Day'].value_counts().reset_index()
+        time_counts.columns = ["Tid på dygnet", "Antal resor"]
 
-            fig = px.bar(
-                time_counts,
-                x="Tid på dygnet",
-                y="Antal resor",
-                title="Fördelning av resor över dygnet",
-                color="Tid på dygnet",
-                color_discrete_sequence=px.colors.sequential.Turbo
-            )
+        fig = px.bar(
+            time_counts,
+            x="Tid på dygnet",
+            y="Antal resor",
+            title="Fördelning av resor över dygnet",
+            color="Tid på dygnet",
+            color_discrete_sequence=px.colors.sequential.Turbo
+        )
 
-            # Hur skapar jag alias för dessa, Afternoon - eftermiddag osv
-            fig.update_layout(
-                xaxis_title="Tid på dygnet",
-                yaxis_title="Antal resor",
-            )
+        fig.update_layout(
+            xaxis_title="Tid på dygnet",
+            yaxis_title="Antal resor",
+        )
 
-            return fig.to_dict()  # Viktigt för att kunna serialisera som JSON
+        return fig 
 
 
+    def show_price_by_time_of_day(self):
+        """
+        Skapar ett linjediagram över medelpriset per tidpunkt på dygnet.
+        Returnerar figuren som dict (för JSON).
+        """
+        df = self.df  
+        avg_prices = df.groupby("Time_of_Day")["Trip_Price"].mean().reset_index()
+
+        # Mappa engelska till svenska
+        mapping = {"Afternoon": "Eftermiddag", "Morning": "Morgon",
+                   "Evening": "Kväll", "Night": "Natt"}
+        avg_prices["Tid på dygnet"] = avg_prices["Time_of_Day"].map(mapping)
+
+        # Sortera kategoriskt för att få rätt ordning
+        order = ["Morgon", "Eftermiddag", "Kväll", "Natt"]
+        avg_prices["Tid på dygnet"] = pd.Categorical(avg_prices["Tid på dygnet"],
+                                                     categories=order,
+                                                     ordered=True)
+        avg_prices = avg_prices.sort_values("Tid på dygnet")
+
+        fig = px.line(
+            avg_prices,
+            x="Tid på dygnet",
+            y="Trip_Price",
+            markers=True,
+            title="Genomsnittligt pris per tidpunkt på dygnet",
+            line_shape="linear"
+        )
+
+        return fig.to_dict()  # returnera som dict för JSON
+        
             

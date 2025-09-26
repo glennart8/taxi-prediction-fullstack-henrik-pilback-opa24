@@ -6,7 +6,7 @@ import pandas as pd
 import joblib
 from taxipred.utils.constants import MODEL_PATH, SCALER_PATH, MODEL_RF
 from fastapi.responses import JSONResponse
-import plotly.io
+import plotly.io as pio
 import googlemaps
 import os
 from dotenv import load_dotenv
@@ -162,23 +162,16 @@ async def predict_price(request: PredictRequest):
 @app.get("/taxi/distribution_plot")
 async def get_distribution_plot():
     taxi_data = TaxiData()
-    fig = taxi_data.show_distribution()
+    fig = taxi_data.show_distribution()  # fig från TaxiData
+    fig_json_str = pio.to_json(fig)      # konvertera korrekt
+    return JSONResponse(content=fig_json_str)
 
-    # PlotlyJSONEncoder löser numpy-problemet
-    fig_json = plotly.io.to_json(fig)  
-    return JSONResponse(content=fig_json)
 
-@app.get("/taxi/price_by_time_of_day/")
-async def price_by_time_of_day():
+@app.get("/taxi/price_plot/")
+async def get_price_plot():
     taxi_data = TaxiData()
-    df = taxi_data.df  
-
-    # Räkna ut medelpris per tidpunkt
-    avg_prices = df.groupby("Time_of_Day")["Trip_Price"].mean().reset_index()
-
-    # Se till att kategorierna kommer i rätt ordning
-    order = ["Morning", "Afternoon", "Evening", "Night"]
-    avg_prices["Time_of_Day"] = pd.Categorical(avg_prices["Time_of_Day"], categories=order, ordered=True)
-    avg_prices = avg_prices.sort_values("Time_of_Day")
-
-    return avg_prices.to_dict(orient="records")
+    fig = taxi_data.show_price_by_time_of_day()
+    
+    # Konvertera till JSON-sträng som hanterar NumPy
+    fig_json_str = pio.to_json(fig)  
+    return JSONResponse(content=fig_json_str)
