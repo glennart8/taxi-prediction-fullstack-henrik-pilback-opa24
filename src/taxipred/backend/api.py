@@ -162,8 +162,8 @@ async def predict_price(request: PredictRequest):
 @app.get("/taxi/distribution_plot")
 async def get_distribution_plot():
     taxi_data = TaxiData()
-    fig = taxi_data.show_distribution()  # fig från TaxiData
-    fig_json_str = pio.to_json(fig)      # konvertera korrekt
+    fig = taxi_data.show_distribution()  # hämtar fig från metoden
+    fig_json_str = pio.to_json(fig)      # konverterar till json
     return JSONResponse(content=fig_json_str)
 
 
@@ -175,3 +175,13 @@ async def get_price_plot():
     # Konvertera till JSON-sträng som hanterar NumPy
     fig_json_str = pio.to_json(fig)  
     return JSONResponse(content=fig_json_str)
+
+# Steg för steg:
+#   FRONTEND: Skicka api-anrop
+
+#   BACKEND:  Skapar en instans av Taxi_Data klassen
+#             Kallar på metod från data-processing som returnerar en fig/plot
+#             Konverterar sedan variabeln fig till en JSON-sträng
+#             Returnerar JSON-strängen med JSONResponse till frontend
+#   FRONTEND: 
+#             I dashboard: Sparar JSON-responsen, omvandlar till dict, visar plot
