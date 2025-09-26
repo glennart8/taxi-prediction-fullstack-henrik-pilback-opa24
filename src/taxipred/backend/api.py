@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from taxipred.backend.data_processing import TaxiData
+from taxipred.backend.data_processing import TaxiData, show_duration_by_weather
 from pydantic import BaseModel
 from datetime import datetime
 import pandas as pd
@@ -171,10 +171,16 @@ async def get_distribution_plot():
 async def get_price_plot():
     taxi_data = TaxiData()
     fig = taxi_data.show_price_by_time_of_day()
-    
-    # Konvertera till JSON-sträng som hanterar NumPy
     fig_json_str = pio.to_json(fig)  
     return JSONResponse(content=fig_json_str)
+
+# Skapar inte en instans av Taxi_Data här så jag använder separat csv-fil med weather
+@app.get("/taxi/duration_by_weather/")
+async def get_duration_by_weather():
+    fig = show_duration_by_weather()  # skapar Plotly-figur
+    fig_json = pio.to_json(fig)       # serialiserar figuren till JSON
+    return JSONResponse(content=fig_json)
+
 
 # Steg för steg:
 #   FRONTEND: Skicka api-anrop

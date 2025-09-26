@@ -6,7 +6,6 @@ from datetime import datetime
 from taxipred.utils.helpers import read_api_endpoint, post_api_endpoint
 import pandas as pd
 import plotly.graph_objects as go
-import plotly_express as px
 import json
 
 
@@ -25,6 +24,7 @@ st.markdown("""
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
+        # color: #F5A78C;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -105,15 +105,20 @@ with col_data:
         st.warning("Ingen resedata kunde hämtas just nu.")
 
 with col_plot:    
-    tab1, tab2 = st.tabs(["Fördelning av resor", "Prisgenomsnitt över dygn"])
+    tab1, tab2, tab3 = st.tabs(["Fördelning av resor", "Prisgenomsnitt över dygn", "Korrelation - väder och tid"])
 
     with tab1:
         st.header("🕒 Fördelning av resor per tid på dygnet")
+        # Skicka GET-request till backend-endpoint 
         response = read_api_endpoint("/taxi/distribution_plot")
         if response.status_code == 200:
+            # Spara JSON-response som sträng
             fig_json_str = response.json()
-            fig_json = json.loads(fig_json_str)  # omvandla JSON-sträng till dict
+            # Omvandla JSON-sträng till dict
+            fig_json = json.loads(fig_json_str)
+            # Skapa en pålotly-fig från dict  
             fig = go.Figure(fig_json)
+            # Visa
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.error("Kunde inte hämta distributionsdiagrammet")
@@ -129,3 +134,16 @@ with col_plot:
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.error("Kunde inte hämta prisdiagrammet")
+            
+    import plotly.io as pio
+
+with tab3:
+        st.subheader("⏱️ Genomsnittlig restid per väderförhållande")
+        response = read_api_endpoint("/taxi/duration_by_weather/")
+
+        if response.status_code == 200:
+            fig_json = response.json()          # sträng som JSON
+            fig = pio.from_json(fig_json)       # gör om till Plotly-figur
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.error("Kunde inte hämta diagrammet för väder och restid")

@@ -1,4 +1,4 @@
-from taxipred.utils.constants import TAXI_CSV_PATH
+from taxipred.utils.constants import TAXI_CSV_PATH, TAXI_CSV_PATH_WITH_WEATHER
 import pandas as pd
 import json
 import plotly.express as px
@@ -44,7 +44,7 @@ class TaxiData:
         most_popular_time = time_counts.idxmax()
         return most_popular_time
     
-
+    # Visa antal resor över tidperioder på dygnet
     def show_distribution(self):
         time_counts = self.df['Time_of_Day'].value_counts().reset_index()
         time_counts.columns = ["Tid på dygnet", "Antal resor"]
@@ -55,7 +55,7 @@ class TaxiData:
             y="Antal resor",
             title="Fördelning av resor över dygnet",
             color="Tid på dygnet",
-            color_discrete_sequence=px.colors.sequential.Turbo
+            color_discrete_sequence=px.colors.sequential.YlOrRd
         )
 
         fig.update_layout(
@@ -65,7 +65,7 @@ class TaxiData:
 
         return fig 
 
-
+    # Visa priset för de olika tidsperioderna på dygnet
     def show_price_by_time_of_day(self):
         """
         Skapar ett linjediagram över medelpriset per tidpunkt på dygnet.
@@ -75,8 +75,7 @@ class TaxiData:
         avg_prices = df.groupby("Time_of_Day")["Trip_Price"].mean().reset_index()
 
         # Mappa engelska till svenska
-        mapping = {"Afternoon": "Eftermiddag", "Morning": "Morgon",
-                   "Evening": "Kväll", "Night": "Natt"}
+        mapping = {"Afternoon": "Eftermiddag", "Morning": "Morgon", "Evening": "Kväll", "Night": "Natt"}
         avg_prices["Tid på dygnet"] = avg_prices["Time_of_Day"].map(mapping)
 
         # Sortera kategoriskt för att få rätt ordning
@@ -95,6 +94,28 @@ class TaxiData:
             line_shape="linear"
         )
 
-        return fig.to_dict()  # returnera som dict för JSON
+        return fig.to_dict()  # returnera som dict för JSON, tex { "Morgon": 12.5, "Eftermiddag": 15.0}
         
-            
+
+def show_duration_by_weather():
+    df_weather = pd.read_csv(TAXI_CSV_PATH_WITH_WEATHER)
+    # Ta bort rader utan väder
+    df_weather = df_weather.dropna(subset=["Weather"])
+    
+    # Beräkna genomsnittlig restid per väder
+    avg_duration = df_weather.groupby("Weather")["Trip_Duration_Minutes"].mean().reset_index()
+    
+    fig = px.bar(
+        avg_duration,
+        x="Weather",
+        y="Trip_Duration_Minutes",
+        title="Genomsnittlig restid per väderförhållande",
+        labels={"Weather": "Väder", "Trip_Duration_Minutes": "Genomsnittlig restid (minuter)"},
+        color="Weather",
+        color_discrete_sequence=px.colors.sequential.Bluyl
+    )
+    
+    return fig
+
+
+

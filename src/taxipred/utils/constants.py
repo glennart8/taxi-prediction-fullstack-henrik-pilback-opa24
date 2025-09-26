@@ -4,6 +4,7 @@ from importlib.resources import files
 
 # --- WITOUT OUTLIERS ---
 TAXI_CSV_PATH = files("taxipred").joinpath("data/cleaned_data_no_outliers.csv")
+TAXI_CSV_PATH_WITH_WEATHER = files("taxipred").joinpath("data/cleaned_data_with_weather.csv")
 
 
 # --- LINEAR REGRESSION ---
