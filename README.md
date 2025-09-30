@@ -13,7 +13,6 @@ TODO: add selling/marketing exlanations of what this project is about:
 #   - Visa ba chart på när på dygnet resor sker
 #   - Restid per tid på dygnet: Använd ett stapeldiagram för att visa den genomsnittliga Trip_Duration_Minutes för varje Time_of_Day. Detta kan avslöja vilka tider som har mest trafik.
 
-
 1. Från Streamlit till FastAPI: HTTP-förfrågan
 anropar post_api_endpoint i helpers.py
 
@@ -32,3 +31,8 @@ return {"predicted_price": round(predicted_price, 2)}. Denna rad skickar ett Pyt
 5. FastAPI konverterar svaret och skickar tillbaka det som en JSON-svar.
 
 6. Streamlit tar emot svaret
+
+
+# Varför minusvärden?
+
+Något med intercept? Den kan ju aldrig var anoll eftersom basefare finns på alla resor, ska jag lägga in den separat på något vis för att starta på ett värde?

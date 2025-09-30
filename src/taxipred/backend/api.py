@@ -21,7 +21,10 @@ app = FastAPI()
 # .as_posix() för att få en strängsökväg
 model_lr = joblib.load(MODEL_PATH.as_posix())
 model_rf = joblib.load(MODEL_RF.as_posix())
+#MinMaxScaler används
 scaler = joblib.load(SCALER_PATH.as_posix())
+
+
 
 # Kolumnerna som modellen tränats på i exakt ordning - en konstant
 TRAIN_COLUMNS = ['Trip_Distance_km', 
@@ -58,7 +61,7 @@ def calculate_time_of_day(trip_datetime: datetime) -> str:
     else:
         return "Night"
 
-def prepare_input_data(request: PredictRequest) -> pd.DataFrame:
+def prepare_input_data(request: PredictRequest):
     """
     Förbereder inkommande data från PredictRequest för prediktion.
     """

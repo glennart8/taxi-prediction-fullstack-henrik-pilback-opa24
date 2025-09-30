@@ -71,8 +71,7 @@ class TaxiData:
         Skapar ett linjediagram över medelpriset per tidpunkt på dygnet.
         Returnerar figuren som dict (för JSON).
         """
-        df = self.df  
-        avg_prices = df.groupby("Time_of_Day")["Trip_Price"].mean().reset_index()
+        avg_prices = self.df.groupby("Time_of_Day")["Trip_Price"].mean().reset_index()
 
         # Mappa engelska till svenska
         mapping = {"Afternoon": "Eftermiddag", "Morning": "Morgon", "Evening": "Kväll", "Night": "Natt"}
@@ -91,7 +90,8 @@ class TaxiData:
             y="Trip_Price",
             markers=True,
             title="Genomsnittligt pris per tidpunkt på dygnet",
-            line_shape="linear"
+            line_shape="linear",
+            labels={"Trip_Price": "Resans pris"}
         )
 
         return fig.to_dict()  # returnera som dict för JSON, tex { "Morgon": 12.5, "Eftermiddag": 15.0}
