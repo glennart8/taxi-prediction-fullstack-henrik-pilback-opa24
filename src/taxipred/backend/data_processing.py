@@ -1,4 +1,3 @@
-
 from dotenv import load_dotenv
 from taxipred.utils.constants import TAXI_CSV_PATH, TAXI_CSV_PATH_WITH_WEATHER
 import pandas as pd
@@ -8,7 +7,7 @@ import googlemaps
 import os
 from fastapi.responses import JSONResponse
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+load_dotenv() 
 
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
 gmaps_client = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
@@ -144,8 +143,20 @@ def get_distance_duration(start_address: str, end_address: str):
 
         distance_km = directions[0]["legs"][0]["distance"]["value"] / 1000
         duration_min = directions[0]["legs"][0]["duration"]["value"] / 60
+        
+        # Skapa en lista med koordinater längs rutten
+        steps = directions[0]["legs"][0]["steps"]
+        route_coords = []
+        for step in steps:
+            start_step = step["start_location"]
+            route_coords.append((start_step["lat"], start_step["lng"]))
+        route_coords.append((end_loc["lat"], end_loc["lng"]))  # lägg till slutpunkten
 
-        return {"distance_km": distance_km, "duration_minutes": duration_min}
+        return {
+            "distance_km": distance_km,
+            "duration_minutes": duration_min,
+            "route_coords": route_coords
+        }
 
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
