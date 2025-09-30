@@ -6,11 +6,7 @@ import plotly.graph_objects as go
 import json
 import folium
 from streamlit_folium import st_folium
-
-# --- To Do ---
-
-# Få till alternativ när man skriver i en adress?
-
+import plotly.io as pio
 
 sek = 9.35
 
@@ -24,7 +20,6 @@ st.markdown("""
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        # color: #F5A78C;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -86,20 +81,12 @@ if st.session_state["duration_minutes"] is not None:
 if st.session_state["predicted_prices"] is not None:
     predicted_prices = st.session_state["predicted_prices"]
     st.metric("Uppskattat pris (Random Forest)", f"{predicted_prices['predicted_price_rf']*sek:.2f} kr")
-
-# --- Visa karta ---
-if st.session_state["route_coords"] is not None:
-    route_coords = st.session_state["route_coords"]
-    m = folium.Map(location=route_coords[0], zoom_start=10, tiles="OpenStreetMap")
-    folium.Marker(location=route_coords[0], popup="Start", icon=folium.Icon(color="green")).add_to(m)
-    folium.Marker(location=route_coords[-1], popup="Slut", icon=folium.Icon(color="red")).add_to(m)
-    folium.PolyLine(route_coords, color="blue", weight=5, opacity=0.7).add_to(m)
-    st_folium(m, width=700, height=500)
-
+    
 # --- KPI:S ---
 with col_right:
     st.header("📈 KPI:s")
     avg_prices = read_api_endpoint("taxi/avg_price/").json()
+    
     col_kpi_left, col_kpi_right = st.columns(2)
 
     with col_kpi_left:
@@ -114,61 +101,47 @@ with col_right:
         
         st.feedback(options="stars", key=None, disabled=False, on_change=None, args=None, kwargs=None, width="content")
 
-# --- Resedata & Plot ---
-col_data, col_plot = st.columns([3,3])
+# --- Karta och Plots ---
+with st.container():   # container som delar upp bredden
+    col_map, col_plot = st.columns([3, 3])   # vänster = karta, höger = plots
 
-# with col_data:  
-    
-    # JAG VILL VISA MIN KARTA HÄR!
-    
-#     data = read_api_endpoint("taxi")
-#     if data and data.status_code == 200:
-#         df = pd.DataFrame(data.json())
-#         with st.expander("📊 Visa resedata"):
-#             st.dataframe(df)
-#     else:
-#         st.warning("Ingen resedata kunde hämtas just nu.")
-        
-with col_plot:    
-    tab1, tab2, tab3 = st.tabs(["Fördelning av resor", "Prisgenomsnitt över dygn", "Korrelation - väder och tid"])
+    with col_map:
+        st.subheader("🗺️ Resrutt")
+        if st.session_state["route_coords"] is not None:
+            route_coords = st.session_state["route_coords"]
+            m = folium.Map(location=route_coords[0], zoom_start=10, tiles="OpenStreetMap")
+            folium.Marker(location=route_coords[0], popup="Start", icon=folium.Icon(color="green")).add_to(m)
+            folium.Marker(location=route_coords[-1], popup="Slut", icon=folium.Icon(color="red")).add_to(m)
+            folium.PolyLine(route_coords, color="blue", weight=5, opacity=0.7).add_to(m)
+            st_folium(m, width=800, height=520)
 
-    with tab1:
-        st.header("🕒 Fördelning av resor per tid på dygnet")
-        # Skicka GET-request till backend-endpoint 
-        response = read_api_endpoint("/taxi/distribution_plot")
-        if response.status_code == 200:
-            # Spara JSON-response som sträng
-            fig_json_str = response.json()
-            # Omvandla JSON-sträng till dict
-            fig_json = json.loads(fig_json_str)
-            # Skapa en pålotly-fig från dict  
-            fig = go.Figure(fig_json)
-            # Visa
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.error("Kunde inte hämta distributionsdiagrammet")
+    with col_plot:
+        tab1, tab2, tab3 = st.tabs(["Fördelning av resor", "Prisgenomsnitt över dygn", "Korrelation - väder och tid"])
 
-    with tab2:
-        st.header("📈 Prisgenomsnitt över dygnet")
-        response = read_api_endpoint("/taxi/price_plot/")
-        if response.status_code == 200:
-            fig_json_str = response.json()
-            # Konvertera JSON-sträng till dict
-            fig_json = json.loads(fig_json_str)
-            fig = go.Figure(fig_json)
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.error("Kunde inte hämta prisdiagrammet")
-            
-    import plotly.io as pio
+        with tab1:
+            st.header("🕒 Fördelning av resor per tid på dygnet")
+            response = read_api_endpoint("/taxi/distribution_plot")
+            if response.status_code == 200:
+                fig_json = json.loads(response.json())
+                st.plotly_chart(go.Figure(fig_json), use_container_width=True)
+            else:
+                st.error("Kunde inte hämta distributionsdiagrammet")
 
-with tab3:
-        st.subheader("⏱️ Genomsnittlig restid per väderförhållande")
-        response = read_api_endpoint("/taxi/duration_by_weather/")
+        with tab2:
+            st.header("📈 Prisgenomsnitt över dygnet")
+            response = read_api_endpoint("/taxi/price_plot/")
+            if response.status_code == 200:
+                fig_json = json.loads(response.json())
+                st.plotly_chart(go.Figure(fig_json), use_container_width=True)
+            else:
+                st.error("Kunde inte hämta prisdiagrammet")
 
-        if response.status_code == 200:
-            fig_json = response.json()          # sträng som JSON
-            fig = pio.from_json(fig_json)       # gör om till Plotly-figur
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.error("Kunde inte hämta diagrammet för väder och restid")
+        with tab3:
+            st.subheader("⏱️ Genomsnittlig restid per väderförhållande")
+            response = read_api_endpoint("/taxi/duration_by_weather/")
+            if response.status_code == 200:
+                fig_json = response.json()
+                fig = pio.from_json(fig_json)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.error("Kunde inte hämta diagrammet för väder och restid")
