@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from taxipred.backend.data_processing import TaxiData, show_duration_by_weather
+from taxipred.backend.data_processing import TaxiData, show_duration_by_weather, get_distance_duration
 from pydantic import BaseModel
 from datetime import datetime
 import pandas as pd
@@ -7,14 +7,8 @@ import joblib
 from taxipred.utils.constants import MODEL_PATH, SCALER_PATH, MODEL_RF
 from fastapi.responses import JSONResponse
 import plotly.io as pio
-import googlemaps
-import os
-from dotenv import load_dotenv
 
 
-load_dotenv()
-GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
-gmaps_client = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
 app = FastAPI()
 
 # --- Ladda modell och scaler ---
@@ -23,8 +17,6 @@ model_lr = joblib.load(MODEL_PATH.as_posix())
 model_rf = joblib.load(MODEL_RF.as_posix())
 #MinMaxScaler används
 scaler = joblib.load(SCALER_PATH.as_posix())
-
-
 
 # Kolumnerna som modellen tränats på i exakt ordning - en konstant
 TRAIN_COLUMNS = ['Trip_Distance_km', 
@@ -88,34 +80,14 @@ def prepare_input_data(request: PredictRequest):
             input_data_encoded[col] = 0
 
     # Säkerställ att kolumnordningen är EXAKT densamma som träningsdatan
-    return input_data_encoded[TRAIN_COLUMNS]
-
-
-@app.get("/taxi/distance_duration/")
-async def distance_duration(start_address: str, end_address: str):
-    try:
-        start_result = gmaps_client.geocode(start_address)
-        end_result = gmaps_client.geocode(end_address)
-
-        start_loc = start_result[0]["geometry"]["location"]
-        end_loc = end_result[0]["geometry"]["location"]
-
-        directions = gmaps_client.directions(
-            (start_loc["lat"], start_loc["lng"]),
-            (end_loc["lat"], end_loc["lng"]),
-            mode="driving"
-        )
-
-        distance_km = directions[0]["legs"][0]["distance"]["value"] / 1000
-        duration_min = directions[0]["legs"][0]["duration"]["value"] / 60
-
-        return {"distance_km": distance_km, "duration_minutes": duration_min}
-
-    except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=500)
+    return input_data_encoded[TRAIN_COLUMNS]        
 
 
 # --- API-ANROP ---
+
+@app.get("/taxi/distance_duration/")
+async def distance_duration_endpoint(start_address: str, end_address: str):
+    return get_distance_duration(start_address, end_address)
 
 @app.get("/taxi/")
 async def read_taxi_data():
@@ -153,7 +125,7 @@ async def predict_price(request: PredictRequest):
     predicted_price_lr = model_lr.predict(scaled_data)[0]
     predicted_price_rf = model_rf.predict(final_input_df)[0]
     
-    # Returnerar en dictionary med tydliga nycklar för varje prediktion
+    # Returnerar en dictionary för varje prediktion
     return {
         "predicted_price_lr": round(predicted_price_lr, 2),
         "predicted_price_rf": round(predicted_price_rf, 2)

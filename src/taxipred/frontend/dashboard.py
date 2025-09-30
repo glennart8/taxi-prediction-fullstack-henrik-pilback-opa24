@@ -1,18 +1,14 @@
 import streamlit as st
-import googlemaps
-import os
-from dotenv import load_dotenv
 from datetime import datetime 
 from taxipred.utils.helpers import read_api_endpoint, post_api_endpoint
 import pandas as pd
 import plotly.graph_objects as go
 import json
-
+from pathlib import Path
 
 # --- Setup ---
-load_dotenv()
-GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
-gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
+
+sek = 9.35
 
 # --- Streamlit ---
 st.set_page_config(layout="wide", page_title="Taxi-prediction")
@@ -37,7 +33,7 @@ with col_left:
     st.header("Beräkna pris för din resa")
     start_address = st.text_input("Från:")
     end_address = st.text_input("Till:")
-
+    
     if st.button("Uppskatta pris"):
         # --- Hämta avstånd och tid från backend ---
         params = {"start_address": start_address, "end_address": end_address}
@@ -65,8 +61,8 @@ with col_left:
             
             if price_response.status_code == 200:
                 predicted_prices = price_response.json()
-                st.metric("Uppskattat pris (Linear Regression)", f"{predicted_prices['predicted_price_lr']*9.35:.2f} kr")
-                st.metric("Uppskattat pris (Random Forest)", f"{predicted_prices['predicted_price_rf']*9.35:.2f} kr")
+                st.metric("Uppskattat pris (Linear Regression)", f"{predicted_prices['predicted_price_lr']*sek:.2f} kr")
+                st.metric("Uppskattat pris (Random Forest)", f"{predicted_prices['predicted_price_rf']*sek:.2f} kr")
             else:
                 st.error("Kunde inte hämta pris från backend.")
         else:
@@ -77,7 +73,6 @@ with col_left:
 with col_right:
     st.header("📈 KPI:s")
     avg_prices = read_api_endpoint("taxi/avg_price/").json()
-    sek = 9.35
     col_kpi_left, col_kpi_right = st.columns(2)
 
     with col_kpi_left:

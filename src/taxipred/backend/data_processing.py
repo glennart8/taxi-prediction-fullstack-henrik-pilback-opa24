@@ -1,7 +1,17 @@
+
+from dotenv import load_dotenv
 from taxipred.utils.constants import TAXI_CSV_PATH, TAXI_CSV_PATH_WITH_WEATHER
 import pandas as pd
 import json
 import plotly.express as px
+import googlemaps
+import os
+from fastapi.responses import JSONResponse
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+
+GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
+gmaps_client = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
 
 class TaxiData:
     '''Klass som läser in den rensade datan, innehåller metoder som returnerar data (KPI och plots)'''
@@ -118,4 +128,24 @@ def show_duration_by_weather():
     return fig
 
 
+def get_distance_duration(start_address: str, end_address: str):
+    try:
+        start_result = gmaps_client.geocode(start_address)
+        end_result = gmaps_client.geocode(end_address)
 
+        start_loc = start_result[0]["geometry"]["location"]
+        end_loc = end_result[0]["geometry"]["location"]
+
+        directions = gmaps_client.directions(
+            (start_loc["lat"], start_loc["lng"]),
+            (end_loc["lat"], end_loc["lng"]),
+            mode="driving"
+        )
+
+        distance_km = directions[0]["legs"][0]["distance"]["value"] / 1000
+        duration_min = directions[0]["legs"][0]["duration"]["value"] / 60
+
+        return {"distance_km": distance_km, "duration_minutes": duration_min}
+
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
