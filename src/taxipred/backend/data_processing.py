@@ -6,6 +6,7 @@ import plotly.express as px
 import googlemaps
 import os
 from fastapi.responses import JSONResponse
+import polyline  # för att skriva ut rutten i gmaps
 
 load_dotenv() 
 
@@ -144,13 +145,13 @@ def get_distance_duration(start_address: str, end_address: str):
         distance_km = directions[0]["legs"][0]["distance"]["value"] / 1000
         duration_min = directions[0]["legs"][0]["duration"]["value"] / 60
         
-        # Skapa en lista med koordinater längs rutten
+        # Bygg upp koordinater från polyline för att inte åka fågelvägen
         steps = directions[0]["legs"][0]["steps"]
         route_coords = []
         for step in steps:
-            start_step = step["start_location"]
-            route_coords.append((start_step["lat"], start_step["lng"]))
-        route_coords.append((end_loc["lat"], end_loc["lng"]))  # lägg till slutpunkten
+            points = step["polyline"]["points"]  # kodad polyline-sträng
+            decoded_points = polyline.decode(points)  # [(lat, lng), ...]
+            route_coords.extend(decoded_points)
 
         return {
             "distance_km": distance_km,

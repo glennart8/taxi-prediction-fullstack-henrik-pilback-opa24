@@ -1,7 +1,6 @@
 import streamlit as st
 from datetime import datetime 
 from taxipred.utils.helpers import read_api_endpoint, post_api_endpoint
-import pandas as pd
 import plotly.graph_objects as go
 import json
 import folium
@@ -34,7 +33,7 @@ with col_left:
     start_address = st.text_input("Från:")
     end_address = st.text_input("Till:")
 
-# --- Initiera session_state ---
+# --- Initiera session_state för att inte krasha innan några värden finns ---
 if "distance_km" not in st.session_state:
     st.session_state["distance_km"] = None
 if "duration_minutes" not in st.session_state:
@@ -51,6 +50,7 @@ if st.button("Uppskatta pris"):
 
     if response.status_code == 200:
         data = response.json()
+        # Spara värdena så att de kan användas hela tiden
         st.session_state["distance_km"] = data["distance_km"]
         st.session_state["duration_minutes"] = data["duration_minutes"]
         st.session_state["route_coords"] = data["route_coords"]  # för kartan
@@ -99,6 +99,7 @@ with col_right:
         st.metric("Tidpunkt för dyrast resa", mapping.get(read_api_endpoint("taxi/most_expensive").json(), "N/A"))
         st.metric("Flest resenärer", mapping.get(read_api_endpoint("/taxi/most_customers").json(), "N/A"))
         
+        # Kul med feedback ju
         st.feedback(options="stars", key=None, disabled=False, on_change=None, args=None, kwargs=None, width="content")
 
 # --- Karta och Plots ---
@@ -109,11 +110,15 @@ with st.container():   # container som delar upp bredden
         st.subheader("🗺️ Resrutt")
         if st.session_state["route_coords"] is not None:
             route_coords = st.session_state["route_coords"]
-            m = folium.Map(location=route_coords[0], zoom_start=10, tiles="OpenStreetMap")
+            
+            # Få ut mitten på rutten
+            middle_of_route = route_coords[len(route_coords) // 2]
+            
+            m = folium.Map(location=route_coords[0], zoom_start=11, tiles="OpenStreetMap")
             folium.Marker(location=route_coords[0], popup="Start", icon=folium.Icon(color="green")).add_to(m)
             folium.Marker(location=route_coords[-1], popup="Slut", icon=folium.Icon(color="red")).add_to(m)
-            folium.PolyLine(route_coords, color="blue", weight=5, opacity=0.7).add_to(m)
-            st_folium(m, width=800, height=520)
+            folium.PolyLine(route_coords, color="blue", weight=3, opacity=0.8).add_to(m)
+            st_folium(m, width=800, height=520, center=middle_of_route)
 
     with col_plot:
         tab1, tab2, tab3 = st.tabs(["Fördelning av resor", "Prisgenomsnitt över dygn", "Korrelation - väder och tid"])
@@ -122,7 +127,9 @@ with st.container():   # container som delar upp bredden
             st.header("🕒 Fördelning av resor per tid på dygnet")
             response = read_api_endpoint("/taxi/distribution_plot")
             if response.status_code == 200:
+                # konverterar från JSON till dict
                 fig_json = json.loads(response.json())
+                # skapar plotly figure av dicten
                 st.plotly_chart(go.Figure(fig_json), use_container_width=True)
             else:
                 st.error("Kunde inte hämta distributionsdiagrammet")

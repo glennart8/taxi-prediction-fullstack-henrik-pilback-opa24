@@ -118,7 +118,7 @@ async def predict_price(request: PredictRequest):
     # Förbered datan med en separat funktion för renare kod
     final_input_df = prepare_input_data(request)
     
-    # Skala datan (enligt din befintliga kod)
+    # Skala datan 
     scaled_data = scaler.transform(final_input_df)
     
     # Gör prediktioner med båda modellerna
